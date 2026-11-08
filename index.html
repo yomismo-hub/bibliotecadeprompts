@@ -1,0 +1,864 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Biblioteca de Prompt</title>
+<style>
+:root{
+  --bg:#f6f5f1; --panel:#ffffff; --ink:#1d1d1b; --muted:#6b6a64; --line:#e3e1d9;
+  --accent:#c4552d; --accent-ink:#ffffff; --chip:#efede6; --var:#fbe6d6; --varink:#8a3513;
+  --ok:#2f7d4f; --shadow:0 1px 2px rgba(0,0,0,.05),0 6px 18px rgba(0,0,0,.05);
+}
+@media (prefers-color-scheme:dark){
+  :root{--bg:#161614;--panel:#1f1f1c;--ink:#efede6;--muted:#a09e95;--line:#33322d;--chip:#2a2924;--var:#4a2a1a;--varink:#f3b995;--accent:#e0714a;--shadow:none}
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{padding:28px 16px 8px;max-width:1100px;margin:0 auto;display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+h1{margin:0;font-size:1.6rem;letter-spacing:-.01em}
+h1 small{display:block;font-size:.85rem;font-weight:400;color:var(--muted);letter-spacing:0}
+.actions{display:flex;flex-wrap:wrap;gap:8px}
+main{max-width:1100px;margin:0 auto;padding:8px 16px 60px}
+button,.btn{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:8px 14px;border-radius:10px}
+button:hover,.btn:hover{border-color:var(--muted)}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+button.small{padding:5px 10px;font-size:.85rem;border-radius:8px}
+button.danger:hover{border-color:#b3261e;color:#b3261e}
+input,select,textarea{font:inherit;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:9px 12px;width:100%}
+textarea{resize:vertical;min-height:110px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.92rem}
+input:focus,select:focus,textarea:focus,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.bar{display:grid;gap:12px;margin:14px 0 18px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.chips .label{font-size:.8rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;min-width:74px}
+.chip{border:1px solid var(--line);background:var(--chip);border-radius:999px;padding:5px 13px;font-size:.9rem}
+.chip[aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.count{color:var(--muted);font-size:.9rem;margin:0 0 10px}
+.grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(320px,1fr))}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:10px}
+.card h3{margin:0;font-size:1.05rem;line-height:1.3}
+.meta{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.badge{font-size:.75rem;padding:2px 9px;border-radius:999px;background:var(--chip);color:var(--muted)}
+.badge.model{background:var(--ink);color:var(--bg)}
+.prompt{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.86rem;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;white-space:pre-wrap;max-height:150px;overflow:auto}
+.v{background:var(--var);color:var(--varink);border-radius:4px;padding:0 3px}
+.row{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:auto}
+.stars{display:inline-flex;gap:1px}
+.stars button{border:0;background:none;padding:0 1px;font-size:1.05rem;line-height:1;color:var(--line)}
+.stars button.on{color:#d99a1c}
+.spacer{flex:1}
+.empty{text-align:center;color:var(--muted);padding:50px 10px;border:1px dashed var(--line);border-radius:14px}
+dialog{border:1px solid var(--line);border-radius:16px;background:var(--panel);color:var(--ink);padding:0;width:min(680px,94vw);box-shadow:0 20px 60px rgba(0,0,0,.3)}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+.dlg{padding:20px;display:grid;gap:12px}
+.dlg h2{margin:0;font-size:1.2rem}
+.two{display:grid;gap:12px;grid-template-columns:1fr 1fr}
+@media(max-width:520px){.two{grid-template-columns:1fr}}
+label{display:grid;gap:4px;font-size:.85rem;color:var(--muted)}
+.dlg .foot{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+.preview{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.88rem;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;white-space:pre-wrap;max-height:200px;overflow:auto}
+.hint{font-size:.82rem;color:var(--muted);margin:0}
+#toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:10px;opacity:0;pointer-events:none;transition:opacity .2s;font-size:.9rem}
+#toast.show{opacity:1}
+.detail{display:grid;gap:4px}
+.detail pre{margin:0;white-space:pre-wrap;font:inherit;color:var(--muted);font-size:.9rem}
+</style>
+</head>
+<body>
+<header>
+  <h1>Biblioteca de Prompt<small>Tus prompts por modelo y categoría. Funciona sin conexión y sin cuentas.</small></h1>
+  <div class="actions">
+    <button class="primary" id="btnNew">+ Añadir prompt</button>
+    <label class="btn" style="color:var(--ink);font-size:1rem;display:inline-block;cursor:pointer">Importar .md<input id="fileIn" type="file" accept=".md,text/markdown" multiple hidden></label>
+    <label class="btn" style="color:var(--ink);font-size:1rem;display:inline-block;cursor:pointer">Importar carpeta<input id="dirIn" type="file" webkitdirectory multiple hidden></label>
+    <button id="btnZip">Descargar todo (.zip)</button>
+  </div>
+</header>
+<main>
+  <div class="bar">
+    <input id="q" type="search" placeholder="Buscar por título, texto o etiqueta…" aria-label="Buscar">
+    <div id="fModel" style="display:grid;gap:8px"></div>
+    <div class="chips" id="fCat"><span class="label">Categoría</span></div>
+    <div class="chips"><span class="label">Orden</span>
+      <select id="sort" style="width:auto" aria-label="Ordenar">
+        <option value="val">Mejor valorados</option>
+        <option value="fecha">Más recientes</option>
+        <option value="titulo">Título (A–Z)</option>
+      </select>
+    </div>
+  </div>
+  <p class="count" id="count"></p>
+  <div class="grid" id="grid"></div>
+</main>
+
+<dialog id="dlgEdit"><form class="dlg" id="formEdit" method="dialog">
+  <h2 id="editTitle">Añadir prompt</h2>
+  <label>Título<input id="eTitulo" required maxlength="120"></label>
+  <div class="two">
+    <label>Modelo<select id="eModelo"></select></label>
+    <label>Categoría<select id="eCat"></select></label>
+  </div>
+  <div class="two">
+    <label>Etiquetas (separadas por comas)<input id="eTags" placeholder="marketing, redes"></label>
+    <label>Valoración (1 a 5)<select id="eVal"><option>1</option><option>2</option><option selected>3</option><option>4</option><option>5</option></select></label>
+  </div>
+  <label>Prompt (usa [CORCHETES] para las partes que cambian)<textarea id="ePrompt" required></textarea></label>
+  <label>Ejemplo de resultado<textarea id="eEj" style="min-height:70px"></textarea></label>
+  <label>Notas (cuándo funciona mejor, qué ajustar)<textarea id="eNotas" style="min-height:70px"></textarea></label>
+  <p class="hint">Al guardar se añade a tu biblioteca y se descarga el archivo .md para que lo subas a la carpeta correspondiente de Drive.</p>
+  <div class="foot">
+    <button type="button" id="eCancel">Cancelar</button>
+    <button type="submit" class="primary">Guardar</button>
+  </div>
+</form></dialog>
+
+<dialog id="dlgUse"><div class="dlg">
+  <h2 id="uTitle"></h2>
+  <div id="uFields" style="display:grid;gap:10px"></div>
+  <div class="preview" id="uPrev"></div>
+  <div class="foot">
+    <button type="button" id="uClose">Cerrar</button>
+    <button type="button" class="primary" id="uCopy">Copiar</button>
+  </div>
+</div></dialog>
+
+<dialog id="dlgView"><div class="dlg">
+  <h2 id="vTitle"></h2>
+  <div class="meta" id="vMeta"></div>
+  <div class="detail"><strong>Prompt</strong><div class="prompt" id="vPrompt" style="max-height:none"></div></div>
+  <div class="detail" id="vEjBox"><strong>Ejemplo de resultado</strong><pre id="vEj"></pre></div>
+  <div class="detail" id="vNoBox"><strong>Notas</strong><pre id="vNo"></pre></div>
+  <div class="foot"><button type="button" id="vClose">Cerrar</button></div>
+</div></dialog>
+
+<div id="toast" role="status"></div>
+
+<script>
+"use strict";
+const GRUPOS=[["Texto",["ChatGPT","Claude","Gemini","Microsoft Copilot","Perplexity","DeepSeek","Grok","Universal"]],["Imagen",["Midjourney","Stable Diffusion","Adobe Firefly","Ideogram","Leonardo.ai","FLUX"]],["Vídeo",["Seedance","Kling AI","Runway","MiniMax","Luma","Wan","Synthesia","Veo","Sora"]]];
+const MODELOS=GRUPOS.flatMap(g=>g[1]);
+const SEED_V=2;
+const CATS=[["imagen","Imagen"],["video","Vídeo"],["productividad","Productividad"],["programacion","Programación"],["escritura","Escritura"],["analisis-de-datos","Análisis de datos"],["aprendizaje","Aprendizaje"],["otros","Otros"]];
+const catName=k=>(CATS.find(c=>c[0]===k)||[k,k])[1];
+const KEY="biblioteca-prompt-v1";
+const TODAY=new Date().toISOString().slice(0,10);
+
+const SEED_NEW=[
+{
+"titulo": "Resumen ejecutivo con objetivo, contexto, fuente y expectativas",
+"modelo": "Microsoft Copilot",
+"categoria": "productividad",
+"etiquetas": [
+"copilot",
+"resumen",
+"reuniones"
+],
+"prompt": "Actúa como [ROL: p. ej. comunicación interna]. Objetivo: resumir [REUNIÓN O DOCUMENTO] para [AUDIENCIA]. Contexto: [MOTIVO Y PARTICIPANTES]. Fuente: usa [CORREO, ARCHIVO O TRANSCRIPCIÓN]. Expectativas: tono [TONO], máximo [PALABRAS] palabras, en viñetas, con decisiones tomadas, tareas con responsable y fecha, y dudas abiertas.",
+"notas": "- Microsoft recomienda ordenar el prompt en objetivo, contexto, fuente y expectativas.\n- Indica quién es la audiencia y el papel que debe adoptar Copilot.\n- Revisa siempre el resultado antes de usarlo y afina con preguntas de seguimiento.\n- Guía consultada: https://www.microsoft.com/insidetrack/blog/five-tips-for-prompting-ai-how-were-communicating-better-at-microsoft-with-microsoft-copilot"
+},
+{
+"titulo": "Correo profesional a partir de tus notas",
+"modelo": "Microsoft Copilot",
+"categoria": "escritura",
+"etiquetas": [
+"copilot",
+"correo",
+"trabajo"
+],
+"prompt": "Redacta un correo para [DESTINATARIO] sobre [ASUNTO]. Objetivo: [QUÉ QUIERO CONSEGUIR]. Contexto: [ANTECEDENTES]. Usa estas notas como fuente: [NOTAS]. Tono [TONO], máximo [PALABRAS] palabras. Propón un asunto y termina con una frase que indique el siguiente paso.",
+"notas": "- Cuanto más contexto des (motivo, participantes, puntos clave), mejor sale.\n- Puedes pegar un ejemplo de correo parecido como referencia de estilo.\n- Guía consultada: https://www.microsoft.com/insidetrack/blog/five-tips-for-prompting-ai-how-were-communicating-better-at-microsoft-with-microsoft-copilot"
+},
+{
+"titulo": "Búsqueda con fuentes, fechas y límite de resultados",
+"modelo": "Perplexity",
+"categoria": "aprendizaje",
+"etiquetas": [
+"perplexity",
+"busqueda",
+"fuentes"
+],
+"prompt": "Busca información actualizada sobre [TEMA]. Dame los [NÚMERO] puntos más relevantes de [PERIODO]. Para cada punto indica la fuente y la fecha. Si algo no se puede confirmar o solo hay coincidencias parciales (otro año, otra empresa), dímelo en lugar de rellenar el hueco.",
+"notas": "- Una pregunta vaga genera una búsqueda vaga: usa el vocabulario concreto del tema.\n- Pon un límite al número de elementos si pides una lista.\n- Dale permiso para decir que no ha encontrado algo; reduce las respuestas inventadas.\n- Si usas la API, las restricciones duras de dominios o fechas van mejor como filtros que en el texto.\n- Guía consultada: https://docs.perplexity.ai/docs/grounded-llm/prompting/prompt-guide"
+},
+{
+"titulo": "Comparativa de opciones con criterios y tabla",
+"modelo": "Perplexity",
+"categoria": "productividad",
+"etiquetas": [
+"perplexity",
+"comparativa",
+"decision"
+],
+"prompt": "Compara [OPCIÓN A], [OPCIÓN B] y [OPCIÓN C] para [USO]. Criterios: [CRITERIO 1], [CRITERIO 2], [CRITERIO 3]. Preséntalo en una tabla y, debajo, una recomendación de dos frases. Cita la fuente de cada dato y señala qué datos no has podido verificar.",
+"notas": "- Comprueba las URLs en las fuentes que cita la respuesta antes de fiarte de ellas.\n- Sirve igual para precios, funciones o reseñas; añade el periodo que te interesa.\n- Guía consultada: https://docs.perplexity.ai/docs/grounded-llm/prompting/prompt-guide"
+},
+{
+"titulo": "Problema técnico directo con restricciones",
+"modelo": "DeepSeek",
+"categoria": "programacion",
+"etiquetas": [
+"deepseek",
+"razonamiento",
+"codigo"
+],
+"prompt": "<problema>[DESCRIPCIÓN DEL PROBLEMA]</problema>\n<datos>[DATOS Y CONDICIONES]</datos>\n<restricciones>[LÍMITES DE TIEMPO, MEMORIA, LENGUAJE]</restricciones>\nDame la solución final y una comprobación breve de que cumple las restricciones.",
+"notas": "- Es un modelo de razonamiento: sé directo y deja que él decida los pasos.\n- Evita ejemplos múltiples (few-shot) y no le fuerces el paso a paso; pueden empeorar el resultado.\n- Los delimitadores (como las etiquetas) separan bien las partes de la entrada.\n- Para tareas muy simples rinde mejor un modelo convencional.\n- Guía consultada: https://helicone.ai/blog/prompt-thinking-models"
+},
+{
+"titulo": "Cálculo o lógica con condiciones",
+"modelo": "DeepSeek",
+"categoria": "analisis-de-datos",
+"etiquetas": [
+"deepseek",
+"calculo",
+"logica"
+],
+"prompt": "<planteamiento>[PROBLEMA DE CÁLCULO O LÓGICA]</planteamiento>\n<datos>[VALORES Y CONDICIONES]</datos>\nTómate el tiempo que necesites y analiza cada aspecto con cuidado. Responde con el resultado y una verificación en dos líneas.",
+"notas": "- Pedirle que se tome su tiempo suele mejorar la calidad, a costa de más tokens.\n- No añadas contexto de más: más información no siempre mejora la respuesta.\n- Guía consultada: https://helicone.ai/blog/prompt-thinking-models"
+},
+{
+"titulo": "Tendencias en tiempo real con tipo de fuente",
+"modelo": "Grok",
+"categoria": "productividad",
+"etiquetas": [
+"grok",
+"tiempo-real",
+"tendencias"
+],
+"prompt": "Con DeepSearch, investiga qué se está diciendo ahora en X y en la web sobre [TEMA]. Resume en [NÚMERO] puntos, separa hechos confirmados de rumores y di de qué tipo es cada fuente (prensa, cuentas oficiales, usuarios). Prioriza [TIPO DE FUENTES].",
+"notas": "- Grok accede a datos en vivo de X y de la web: útil para temas que cambian hoy.\n- Indica el tipo de fuente que quieres; si no, puede incluir muchas no académicas.\n- Revisa las referencias y pide detalles concretos si el informe sale superficial.\n- Guía consultada: https://learnprompting.org/blog/guide-grok"
+},
+{
+"titulo": "Publicación con tono propio en tres versiones",
+"modelo": "Grok",
+"categoria": "escritura",
+"etiquetas": [
+"grok",
+"redes-sociales",
+"tono"
+],
+"prompt": "Escribe una publicación sobre [TEMA] para [PLATAFORMA]. Tono [TONO: ingenioso, irónico, serio]. Máximo [CARACTERES] caracteres. Dame tres versiones con enfoques distintos y una opción con pregunta final para provocar respuestas.",
+"notas": "- El tono hay que pedirlo directamente en el prompt.\n- Para problemas de código, matemáticas o ciencia, activa el modo de razonamiento (Think) y plantea el problema completo.\n- Guía consultada: https://learnprompting.org/blog/guide-grok"
+},
+{
+"titulo": "Escena fotorrealista con parámetros al final",
+"modelo": "Midjourney",
+"categoria": "imagen",
+"etiquetas": [
+"midjourney",
+"fotorrealismo",
+"parametros"
+],
+"prompt": "[SUBJECT], [ACTION OR POSE], [LOCATION], [LIGHT], shot on [LENS] --ar [RATIO] --raw --s [0-1000]",
+"notas": "- Orden: primero el texto y al final los parámetros, sin texto después de ellos.\n- --raw quita el embellecimiento por defecto; --s sube o baja el estilo artístico (0 a 1000).\n- --ar admite solo proporciones enteras (16:9, 9:16, 2:3).\n- La guía de V8.1 consultada indica que --no no está disponible: describe en positivo lo que sí quieres.\n- Guía consultada: https://evolink.ai/en/api-manual/image-series/midjourney/midjourney-v8-1-prompt-guide"
+},
+{
+"titulo": "Estilo propio con referencia de estilo",
+"modelo": "Midjourney",
+"categoria": "imagen",
+"etiquetas": [
+"midjourney",
+"sref",
+"estilo"
+],
+"prompt": "[SUBJECT AND SCENE], [MEDIUM] --ar [RATIO] --sref [STYLE IMAGE URL] --sw [0-1000] --c [0-100]",
+"notas": "- --sref necesita siempre texto acompañante; no funciona con la imagen sola.\n- --sw gradúa cuánto pesa la referencia y --c (chaos) hace más distintas entre sí las cuatro imágenes.\n- --seed ayuda a comparar cambios de prompt sobre una misma base.\n- Guía consultada: https://evolink.ai/en/api-manual/image-series/midjourney/midjourney-v8-1-prompt-guide"
+},
+{
+"titulo": "Retrato con prompt negativo",
+"modelo": "Stable Diffusion",
+"categoria": "imagen",
+"etiquetas": [
+"stable-diffusion",
+"retrato",
+"negativo"
+],
+"prompt": "Prompt: portrait photo of [SUBJECT], [LIGHTING], [BACKGROUND], sharp focus, natural skin texture\nNegative prompt: disfigured, blurry, cartoon, extra fingers, low quality",
+"notas": "- El prompt negativo es un campo aparte; separa los términos con comas.\n- Sirve para excluir objetos o estilos y corregir anomalías habituales.\n- En algunos generadores solo aparece en el modo avanzado.\n- Guía consultada: https://getimg.ai/guides/guide-to-negative-prompts-in-stable-diffusion"
+},
+{
+"titulo": "Paisaje con exclusiones",
+"modelo": "Stable Diffusion",
+"categoria": "imagen",
+"etiquetas": [
+"stable-diffusion",
+"paisaje",
+"negativo"
+],
+"prompt": "Prompt: [LANDSCAPE] at [TIME OF DAY], [WEATHER], [STYLE], wide angle\nNegative prompt: [THINGS TO EXCLUDE: fog, people, text]",
+"notas": "- Ejemplo de uso: excluir niebla u oscuridad aclara la imagen; excluir musgo lo quita del bosque.\n- No uses el negativo como sustituto de un buen prompt positivo.\n- Guía consultada: https://getimg.ai/guides/guide-to-negative-prompts-in-stable-diffusion"
+},
+{
+"titulo": "Foto de producto con estilo, luz y ambiente",
+"modelo": "Adobe Firefly",
+"categoria": "imagen",
+"etiquetas": [
+"firefly",
+"producto",
+"fotografia"
+],
+"prompt": "[PRODUCT] on [SURFACE], studio photography, soft [LIGHT TYPE] lighting, shallow depth of field, [COLORS], [MOOD]",
+"notas": "- Usa al menos tres palabras y evita verbos como \"generar\" o \"crear\".\n- Orden habitual en los ejemplos de Adobe: sujeto, estilo o medio, detalles de color y luz, ambiente.\n- Itera cambiando el texto y los ajustes; luego retoca en el editor de Firefly o en Photoshop.\n- Guía consultada: https://helpx.adobe.com/firefly/using/tips-and-tricks.html"
+},
+{
+"titulo": "Ilustración digital con emoción",
+"modelo": "Adobe Firefly",
+"categoria": "imagen",
+"etiquetas": [
+"firefly",
+"ilustracion",
+"emocion"
+],
+"prompt": "A [ADJECTIVE: playful or powerful] [SUBJECT] in digital painting style, [COLORS], [LIGHTING], [ATMOSPHERE]",
+"notas": "- Las palabras de emoción (tierno, juguetón, poderoso) cambian el tono de la imagen.\n- Añade estilo e iluminación para evitar resultados genéricos.\n- Guía consultada: https://helpx.adobe.com/firefly/using/tips-and-tricks.html"
+},
+{
+"titulo": "Cartel con texto exacto",
+"modelo": "Ideogram",
+"categoria": "imagen",
+"etiquetas": [
+"ideogram",
+"cartel",
+"tipografia"
+],
+"prompt": "A [IMAGE TYPE: vertical poster] for [IDEA]. [SCENE AND SUBJECT]. [LIGHT AND MOOD]. The headline reads \"[EXACT TEXT]\" in [LETTERING STYLE] at the top, and a smaller line below reads \"[SECONDARY TEXT]\".",
+"notas": "- Pon entre comillas el texto que debe aparecer y colócalo pronto en el prompt.\n- El inglés da resultados más fiables con texto.\n- Ideogram no entiende --ar ni pesos tipo ::1; el formato se elige en la aplicación.\n- Describe en positivo: \"una calle vacía\" mejor que \"sin personas\".\n- Guía consultada: https://docs.ideogram.ai/using-ideogram/getting-started/prompting-guide/in-a-nutshell"
+},
+{
+"titulo": "Logotipo con nombre",
+"modelo": "Ideogram",
+"categoria": "imagen",
+"etiquetas": [
+"ideogram",
+"logotipo",
+"marca"
+],
+"prompt": "A logo for a [BUSINESS TYPE] named \"[NAME]\", with [VISUAL ELEMENT], flat vector style, colors [COLOR NAMES], clean plain background.",
+"notas": "- Nombra los colores con claridad; cada palabra del prompt puede acabar apareciendo en la imagen.\n- Cambia una sola cosa por intento para saber qué mejoró el resultado.\n- Guía consultada: https://docs.ideogram.ai/using-ideogram/getting-started/prompting-guide/in-a-nutshell"
+},
+{
+"titulo": "Retrato con sujeto, medio, estilo, composición y luz",
+"modelo": "Leonardo.ai",
+"categoria": "imagen",
+"etiquetas": [
+"leonardo",
+"retrato",
+"estructura"
+],
+"prompt": "[SUBJECT], [MEDIUM: oil painting or watercolor], [STYLE: realism or fantasy], [COMPOSITION: close-up, centered], [COLOR PALETTE], [LIGHTING]",
+"notas": "- Cinco elementos: sujeto, medio, estilo, composición, color e iluminación.\n- El icono de dados ofrece \"Improve Prompt\", que amplía un prompt corto con más detalle.\n- Mira la Community Feed para ver prompts de imágenes que te gusten.\n- Guía consultada: https://intercom.help/leonardo-ai/en/articles/8942657-how-to-write-great-text-to-image-prompts"
+},
+{
+"titulo": "Recurso para videojuego sobre fondo liso",
+"modelo": "Leonardo.ai",
+"categoria": "imagen",
+"etiquetas": [
+"leonardo",
+"videojuegos",
+"assets"
+],
+"prompt": "Game asset: [OBJECT OR CHARACTER], [MEDIUM], [STYLE], isolated on a plain background, centered, [COLOR PALETTE], [LIGHTING]",
+"notas": "- Pide el fondo liso para poder recortar el recurso después.\n- Corrige zonas concretas con el editor Canvas en lugar de rehacer toda la imagen.\n- Guía consultada: https://intercom.help/leonardo-ai/en/articles/8942657-how-to-write-great-text-to-image-prompts"
+},
+{
+"titulo": "Foto de producto: sujeto, acción, lugar, composición y estilo",
+"modelo": "FLUX",
+"categoria": "imagen",
+"etiquetas": [
+"flux",
+"producto",
+"orden-del-prompt"
+],
+"prompt": "[SUBJECT with material and finish], [ACTION OR POSITION], [LOCATION], [COMPOSITION: height, lens, framing], [STYLE: light direction and hardness]",
+"notas": "- La guía recomienda ese orden: la escena queda definida antes de colocar la cámara.\n- FLUX 3 no admite prompt negativo: expresa lo que no quieres como estado positivo (\"calle vacía\").\n- Genera al tamaño de entrega; no hay paso de escalado posterior.\n- Guía consultada: https://runware.ai/docs/models/bfl-flux-3-image/guides/prompting.md"
+},
+{
+"titulo": "Serie de tomas del mismo producto",
+"modelo": "FLUX",
+"categoria": "imagen",
+"etiquetas": [
+"flux",
+"serie",
+"consistencia"
+],
+"prompt": "[SAME SUBJECT AND STYLE AS BEFORE], [LOCATION], [NEW COMPOSITION: top-down or close-up]",
+"notas": "- Mantén fijos sujeto y estilo y cambia solo la cláusula de composición.\n- Para refinar, elige una imagen buena y úsala como referencia de edición en vez de reescribir el prompt.\n- Cada ejecución del mismo prompt da una imagen distinta (no hay semilla).\n- Guía consultada: https://runware.ai/docs/models/bfl-flux-3-image/guides/prompting.md"
+},
+{
+"titulo": "Plano único con sujeto, acción, cámara y estilo",
+"modelo": "Seedance",
+"categoria": "video",
+"etiquetas": [
+"seedance",
+"estructura",
+"plano-unico"
+],
+"prompt": "Subject: [WHO OR WHAT, AND WHERE]. Action: [WHAT CHANGES, IN ORDER]. Camera: [FRAMING] with one main move: [MOVE]. Style: [LIGHT, PALETTE, TEXTURE, REALISM].",
+"notas": "- Una acción principal y un solo movimiento de cámara por plano.\n- Describe cosas visibles en lugar de adjetivos vagos como \"cinematográfico\".\n- Prueba en 480p y sube a 720p cuando el prompt funcione.\n- Guía consultada: https://www.rundiffusion.com/seedance-2-5-prompt-guide"
+},
+{
+"titulo": "Con referencias, cronología y sonido",
+"modelo": "Seedance",
+"categoria": "video",
+"etiquetas": [
+"seedance",
+"referencias",
+"sonido"
+],
+"prompt": "Use [IMAGE 1] only for [ROLE: character identity]. Use [VIDEO 1] only for [ROLE: camera movement]. Timeline: 0-[N]s [EVENT A]; [N]-[M]s [EVENT B]. Sound: [SOUND] when [VISIBLE ACTION]. End on [FINAL FRAME].",
+"notas": "- Da a cada referencia un único rol; roles contradictorios confunden al modelo.\n- Usa rangos de segundos solo si varios eventos deben caber en un mismo clip.\n- Vincula el sonido a acciones visibles y define el último encuadre si importa para el montaje.\n- Guía consultada: https://www.rundiffusion.com/seedance-2-5-prompt-guide"
+},
+{
+"titulo": "Escena con sujeto, escenario, cámara y luz",
+"modelo": "Kling AI",
+"categoria": "video",
+"etiquetas": [
+"kling",
+"escena",
+"camara"
+],
+"prompt": "[SUBJECT] [ACTION] in [SETTING]. Camera: [SHOT SIZE] with a slow [MOVE]. Lighting and mood: [LIGHT AND ATMOSPHERE]. Pace: [slow, steady or fast], tied to [VISIBLE ACTION].",
+"notas": "- Describe lo que verá el espectador, no detalles técnicos internos.\n- Movimientos útiles: push-in lento hacia el sujeto o tracking shot que sigue la acción.\n- El ritmo funciona mejor si lo ligas a algo visible en la escena.\n- Guía consultada: https://kling.ai/blog/kling-ai-prompt-guide"
+},
+{
+"titulo": "Multiplano con personaje constante y audio",
+"modelo": "Kling AI",
+"categoria": "video",
+"etiquetas": [
+"kling",
+"multi-shot",
+"audio"
+],
+"prompt": "Shot 1 ([SECONDS] s): [SHOT SIZE], [SUBJECT AND ACTION], camera [MOVE]. Shot 2 ([SECONDS] s): [SHOT SIZE], [SUBJECT AND ACTION], camera [MOVE]. Same [CHARACTER] and [OUTFIT] in every shot. Native audio: [DIALOGUE OR SOUND].",
+"notas": "- Kling 3.0 permite varios planos con duración y tamaño propios y audio nativo.\n- Usa referencias para mantener la consistencia del personaje.\n- Planes y créditos cambian: revisa la interfaz antes de producir.\n- Guía consultada: https://kling.ai/blog/kling-ai-prompt-guide"
+},
+{
+"titulo": "Texto a vídeo: cámara, sujeto, acción y entorno",
+"modelo": "Runway",
+"categoria": "video",
+"etiquetas": [
+"runway",
+"gen-4.5",
+"texto-a-video"
+],
+"prompt": "[CAMERA] shot of [SUBJECT] [ACTION] in [ENVIRONMENT]. [LIGHTING AND MOOD]. Continuous, seamless shot.",
+"notas": "- Plantilla orientativa de Runway para Gen-4.5; no es una fórmula obligatoria.\n- Usa frases positivas, lenguaje concreto y evita instrucciones contradictorias.\n- Si ves cortes no deseados, prueba a alargar la duración o a pedir un plano continuo.\n- Guía consultada: https://academy.runway.com/prompt-guide"
+},
+{
+"titulo": "Imagen a vídeo: solo movimiento",
+"modelo": "Runway",
+"categoria": "video",
+"etiquetas": [
+"runway",
+"imagen-a-video",
+"movimiento"
+],
+"prompt": "The camera [MOVEMENT: slowly pushes in]. [SUBJECT] [ACTION]. [SECONDARY MOTION: wind, water or crowd].",
+"notas": "- La imagen ya define composición, luz y estilo: describe solo el movimiento.\n- Para una toma casi fija: \"The locked-off camera remains perfectly still.\"\n- Revisa que la imagen no tenga defectos o pistas de movimiento que contradigan el prompt.\n- Encadena planos usando el último fotograma como imagen de entrada del siguiente.\n- Guía consultada: https://academy.runway.com/prompt-guide"
+},
+{
+"titulo": "Estructura completa para escenas complejas (H3)",
+"modelo": "MiniMax",
+"categoria": "video",
+"etiquetas": [
+"minimax",
+"hailuo",
+"estructura"
+],
+"prompt": "References: [IMAGE 1] = [ROLE]; [AUDIO 1] = [ROLE]. Retention: keep [IDENTITY DETAILS] unchanged. Scene: [SETTING, LIGHT, MOOD]. Timeline: 0-[N]s [SUBJECT] starts [START STATE]; [N]-[M]s [MOVEMENT]; ends [END STATE]. Camera: [MOVE] at [SPEED]. Audio: [SOUND] at [MOMENT]. Constraints: [WHAT MUST NOT CHANGE].",
+"notas": "- Orden recomendado: referencias, qué conservar, escena, cronología, cámara, audio y restricciones.\n- Usa solo las secciones que necesites; un clip simple pide pocas.\n- Cada generación dura de 5 a 15 s y admite hasta 12 referencias.\n- Guía consultada: https://www.kapwing.com/resources/how-to-prompt-minimax-h3-hailuo-3-0-a-guide-for-ai-video-creators/"
+},
+{
+"titulo": "Imagen a vídeo con identidad y trayectoria",
+"modelo": "MiniMax",
+"categoria": "video",
+"etiquetas": [
+"minimax",
+"imagen-a-video",
+"identidad"
+],
+"prompt": "Keep the face, outfit and lighting of [IMAGE 1] unchanged. [SUBJECT] starts [START STATE], [ACTION], and ends [END STATE]. Camera: [CAMERA MOVE], [SPEED]. Medium or close shot so facial detail stays sharp.",
+"notas": "- Describe las acciones como trayectoria: estado inicial, movimiento y estado final.\n- Si los rasgos de la cara importan, usa planos medios o cercanos.\n- Los movimientos muy rápidos dan menos margen para mantener la geometría limpia.\n- Guía consultada: https://www.kapwing.com/resources/how-to-prompt-minimax-h3-hailuo-3-0-a-guide-for-ai-video-creators/"
+},
+{
+"titulo": "Prompt en capas: cámara, sujeto, entorno, física y estilo",
+"modelo": "Luma",
+"categoria": "video",
+"etiquetas": [
+"luma",
+"ray3",
+"capas"
+],
+"prompt": "Camera: [SHOT TYPE AND MOVE]. Subject and action: [WHO, WHAT THEY DO]. Environment: [SETTING, ATMOSPHERE, LIGHT]. Physics: [HOW LIQUIDS, SMOKE OR FABRIC BEHAVE]. Style and mood: [GENRE AND EMOTION].",
+"notas": "- Usa lenguaje directivo y concreto; las instrucciones contradictorias son lo que perjudica.\n- Itera en Draft Mode y genera la versión final en Hi-Fi con el mismo estilo de prompt.\n- Guía consultada: https://lumaai-help.freshdesk.com/support/solutions/articles/151000223059-how-do-i-use-ray3-prompting-effectively-"
+},
+{
+"titulo": "Física de materiales y ritmo",
+"modelo": "Luma",
+"categoria": "video",
+"etiquetas": [
+"luma",
+"fisica",
+"ritmo"
+],
+"prompt": "[CAMERA MOVE]. [LIQUID, FABRIC OR SMOKE] [HOW IT MOVES AND REACTS], [MATERIAL DETAILS]. [SETTING AND LIGHT]. Pace: [slowly, smoothly or precisely]. Style: [DOCUMENTARY OR CINEMATIC], mood [MOOD].",
+"notas": "- Ray3 responde bien cuando describes el comportamiento de los materiales.\n- Palabras como \"lentamente\" o \"con precisión\" controlan la velocidad del movimiento.\n- Guía consultada: https://lumaai-help.freshdesk.com/support/solutions/articles/151000223059-how-do-i-use-ray3-prompting-effectively-"
+},
+{
+"titulo": "Prosa declarativa: sujeto, acción, escenario, cámara y audio",
+"modelo": "Wan",
+"categoria": "video",
+"etiquetas": [
+"wan",
+"estructura",
+"audio"
+],
+"prompt": "[SUBJECT]. [ACTION]. [SETTING]. Camera: [locked-off, tracking, orbit or handheld], [LENS]. Audio: [MAIN SOUND EVENT], then [AMBIENCE], then [BACKGROUND].",
+"notas": "- Escribe como si explicaras el plano a un colega; lo que no nombres lo decidirá el modelo.\n- Indica la cámara de forma explícita; sin indicación tiende a una deriva suave.\n- Entre 5 y 10 beats bien elegidos funcionan mejor que muchos adjetivos.\n- Guía consultada: https://runware.ai/docs/models/alibaba-wan3-0/guides/prompting.md"
+},
+{
+"titulo": "Diálogo y texto en pantalla exactos",
+"modelo": "Wan",
+"categoria": "video",
+"etiquetas": [
+"wan",
+"dialogo",
+"texto-en-pantalla"
+],
+"prompt": "[SETTING AND VISIBLE SPEAKER]. The speaker says: \"[EXACT LINE]\". On-screen text reads \"[EXACT TEXT]\". No subtitles. Camera: [MOVE]. Tempo: [BEAT OR EVENT] at [SECOND].",
+"notas": "- Cita entre comillas la frase exacta y el copy que debe verse.\n- Calcula unos 5 a 8 segundos por beat.\n- Usa semilla (seed) para repetir una generación y ajustar el prompt sobre una muestra fija.\n- Guía consultada: https://runware.ai/docs/models/alibaba-wan3-0/guides/prompting.md"
+},
+{
+"titulo": "Guion de formación con párrafos cortos",
+"modelo": "Synthesia",
+"categoria": "video",
+"etiquetas": [
+"synthesia",
+"guion",
+"formacion"
+],
+"prompt": "Escribe el guion de un vídeo de [DURACIÓN] minutos para [AUDIENCIA] sobre [TEMA]. Escenas de máximo [MINUTOS] minutos, párrafos de 2 o 3 frases, cada párrafo en su propia línea. Escribe números, siglas y símbolos tal como deben pronunciarse. Marca con (pausa) los puntos donde añadiré una pausa.",
+"notas": "- Cada escena admite hasta 5 minutos de guion.\n- Las pausas (de 0,1 a 99 s) se añaden después desde el menú; el sistema lee el texto literalmente.\n- Para marcas o siglas difíciles, usa una grafía fonética o el glosario.\n- Guía consultada: https://docs.synthesia.io/docs/script"
+},
+{
+"titulo": "Diálogo entre dos presentadores",
+"modelo": "Synthesia",
+"categoria": "video",
+"etiquetas": [
+"synthesia",
+"dialogo",
+"presentadores"
+],
+"prompt": "Escribe un diálogo de [N] intervenciones entre [PRESENTADOR A] y [PRESENTADOR B] sobre [TEMA]. Alterna una intervención por párrafo, frases cortas y tono [TONO]. Cierra con una llamada a la acción de [PRESENTADOR A].",
+"notas": "- Cada párrafo tiene su propio selector de orador, voz y velocidad (0,8x a 1,2x).\n- Puedes mezclar idiomas en una misma escena.\n- Guía consultada: https://docs.synthesia.io/docs/script"
+},
+{
+"titulo": "Fórmula de cinco partes con diálogo y sonido",
+"modelo": "Veo",
+"categoria": "video",
+"etiquetas": [
+"veo",
+"veo-3.1",
+"audio"
+],
+"prompt": "[CINEMATOGRAPHY: shot and camera move] + [SUBJECT] + [ACTION] + [CONTEXT] + [STYLE AND AMBIANCE]. Dialogue: \"[LINE]\". SFX: [SOUND]. Ambient noise: [AMBIENCE].",
+"notas": "- Fórmula de Google: cinematografía, sujeto, acción, contexto, estilo y ambiente.\n- El diálogo va entre comillas y los efectos de sonido y el ambiente, descritos aparte.\n- Usa negativos descriptivos: \"un paisaje desolado sin edificios\" en vez de \"sin construcciones\".\n- Clips de 4, 6 u 8 segundos, en 720p o 1080p, 16:9 o 9:16.\n- Guía consultada: https://cloud.google.com/blog/products/ai-machine-learning/ultimate-prompting-guide-for-veo-3-1"
+},
+{
+"titulo": "Varios planos con marcas de tiempo",
+"modelo": "Veo",
+"categoria": "video",
+"etiquetas": [
+"veo",
+"marcas-de-tiempo",
+"multiplano"
+],
+"prompt": "[00:00-00:02] [SHOT AND ACTION]. [00:02-00:04] [SHOT AND ACTION]. [00:04-00:06] [SHOT AND ACTION]. Style: [AESTHETIC AND LIGHT]. Ambient noise: [AMBIENCE]. SFX: [SOUND].",
+"notas": "- Permite varios planos dentro de una sola generación.\n- Para más control puedes usar primer y último fotograma, o imágenes de referencia para mantener personajes.\n- Guía consultada: https://cloud.google.com/blog/products/ai-machine-learning/ultimate-prompting-guide-for-veo-3-1"
+},
+{
+"titulo": "Resumen de escena y detalles",
+"modelo": "Sora",
+"categoria": "video",
+"etiquetas": [
+"sora",
+"estructura",
+"escena"
+],
+"prompt": "Summary: [ONE-SENTENCE SCENE]. Framing and camera: [SHOT TYPE AND MOVE]. Lighting, palette and mood: [DETAILS]. Characters: [WHO, OUTFIT, EXPRESSION, ACTION]. Composition: [e.g. subject off-center]. Transition: [cross-fade or hard cut].",
+"notas": "- Empieza con un resumen breve de la escena y añade los detalles después.\n- Los prompts demasiado cargados pueden saturar al modelo: céntrate en lo esencial y refina.\n- Tiene dificultades con movimientos humanos rápidos y muy complejos.\n- Guía consultada: https://dev.to/_37bbf0c253c0b3edec531e/how-to-prompt-sora-effectively-3ocd"
+},
+{
+"titulo": "Secuencia por planos con marcas de tiempo",
+"modelo": "Sora",
+"categoria": "video",
+"etiquetas": [
+"sora",
+"secuencia",
+"narrativa"
+],
+"prompt": "Shot 1 ([START]-[END] s): [FRAMING], [SUBJECT AND ACTION]. Shot 2 ([START]-[END] s): [FRAMING], [SUBJECT AND ACTION]. Shot 3 ([START]-[END] s): [FRAMING], [SUBJECT AND ACTION]. Consistent [CHARACTER] and [LOCATION] throughout.",
+"notas": "- Para historias largas, divide la narrativa en segmentos y encadena varias peticiones.\n- Pide expresamente diversidad de personas si te importa la representación.\n- Guía consultada: https://dev.to/_37bbf0c253c0b3edec531e/how-to-prompt-sora-effectively-3ocd"
+}
+];
+const SEED=[
+["Imagen de una escena con estilo definido","Gemini","imagen",["imagen","estilo","composicion"],"Crea una imagen de [SUJETO] en [ESTILO: fotografía cinematográfica, acuarela, ilustración plana]. Iluminación [TIPO DE LUZ], composición [PLANO: primer plano, plano general], paleta de colores [COLORES]. Formato [16:9, 1:1, 9:16]. Sin texto ni marcas de agua."],
+["Guion de vídeo corto","Universal","video",["video","guion","redes-sociales"],"Escribe un guion de vídeo de [DURACIÓN] segundos sobre [TEMA] para [PLATAFORMA: YouTube, TikTok, Reels]. Estructura: gancho en los primeros 3 segundos, desarrollo en [NÚMERO] escenas y cierre con una llamada a la acción. Para cada escena indica plano, texto en pantalla y voz en off."],
+["Plan semanal por urgencia e importancia","Claude","productividad",["productividad","planificacion","tareas"],"Actúa como asistente de organización. Estas son mis tareas de la semana: [LISTA DE TAREAS]. Ordénalas por urgencia e importancia, propón un reparto por días teniendo en cuenta que dispongo de [HORAS] horas diarias y señala cuáles puedo delegar o eliminar."],
+["Revisión y mejora de código","Claude","programacion",["programacion","revision","buenas-practicas"],"Revisa este código en [LENGUAJE]: [CÓDIGO]. Explica qué hace, señala errores o malas prácticas y propón una versión mejorada. Mantén el mismo comportamiento y comenta solo lo que cambies."],
+["Texto publicitario en tres versiones","ChatGPT","escritura",["escritura","copywriting","marketing"],"Escribe un texto de [TIPO: anuncio, correo, publicación] para [PRODUCTO O SERVICIO] dirigido a [PÚBLICO]. Tono [TONO]. Longitud máxima [PALABRAS] palabras. Dame tres versiones con enfoques distintos y termina con una llamada a la acción clara."],
+["Resumen y revisión de una tabla de datos","ChatGPT","analisis-de-datos",["datos","analisis","graficos"],"Te paso una tabla con estos datos: [DATOS O ARCHIVO]. Describe las columnas, detecta valores raros o vacíos, calcula [MÉTRICAS] y resume en cinco puntos lo más relevante. Propón el gráfico más adecuado para mostrarlo."],
+["Aprender un tema con analogía y preguntas de repaso","Claude","aprendizaje",["aprendizaje","estudio","repaso"],"Quiero aprender [TEMA] desde nivel [PRINCIPIANTE, INTERMEDIO]. Explícamelo con una analogía sencilla, dame un esquema de los conceptos clave y hazme cinco preguntas para comprobar si lo he entendido, una a una, esperando mi respuesta."],
+["Situación general con preguntas previas y tres opciones","Universal","otros",["general","decisiones"],"Estoy ante esta situación: [CONTEXTO]. Mi objetivo es [OBJETIVO]. Hazme las preguntas que necesites antes de responder y después propón tres opciones con sus ventajas e inconvenientes."]
+].map(s=>({id:uid(),titulo:s[0],modelo:s[1],categoria:s[2],etiquetas:s[3],fecha:TODAY,valoracion:3,version:1,prompt:s[4],ejemplo:"",notas:""}))
+.concat(SEED_NEW.map(s=>({id:uid(),titulo:s.titulo,modelo:s.modelo,categoria:s.categoria,etiquetas:s.etiquetas,fecha:TODAY,valoracion:3,version:1,prompt:s.prompt,ejemplo:"",notas:s.notas})));
+
+function uid(){return Math.random().toString(36).slice(2,10)+Date.now().toString(36).slice(-4)}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function slug(s){return s.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,60)||"prompt"}
+function fileName(p){return p.categoria+"-"+slug(p.titulo)+".md"}
+
+/* ---------- almacenamiento ---------- */
+let data=[];
+function load(){
+  let stored=null,v=0;
+  try{const raw=localStorage.getItem(KEY);if(raw){const j=JSON.parse(raw);if(Array.isArray(j)){stored=j}else{stored=j.data;v=j.v||0}}}catch(e){}
+  if(!Array.isArray(stored)){data=SEED.slice();save();return}
+  data=stored;
+  if(v<SEED_V){
+    const keys=new Set(data.map(p=>p.modelo+"|"+p.categoria+"|"+p.titulo));
+    SEED.forEach(s=>{if(!keys.has(s.modelo+"|"+s.categoria+"|"+s.titulo))data.push(s)});
+    save();
+  }
+}
+function save(){try{localStorage.setItem(KEY,JSON.stringify({v:SEED_V,data}))}catch(e){toast("No se pudo guardar en el navegador. Descarga una copia.")}}
+
+/* ---------- Markdown ---------- */
+function toMd(p){
+  return "---\n"+
+  "titulo: "+p.titulo+"\n"+
+  "modelo: "+p.modelo+"\n"+
+  "categoria: "+p.categoria+"\n"+
+  "etiquetas: ["+p.etiquetas.join(", ")+"]\n"+
+  "fecha: "+p.fecha+"\n"+
+  "valoracion: "+p.valoracion+"\n"+
+  "version: "+p.version+"\n"+
+  "---\n\n## Prompt\n\n"+p.prompt.trim()+"\n\n## Ejemplo de resultado\n\n"+(p.ejemplo.trim()||"Pega aquí un resultado real o un resumen de lo que devolvió.")+"\n\n## Notas\n\n"+(p.notas.trim()||"- Cuándo funciona mejor\n- Qué ajustar si no sale bien\n- Cambios respecto a la versión anterior")+"\n";
+}
+function parseMd(text,path){
+  text=text.replace(/\r\n/g,"\n");
+  const meta={};let body=text;
+  const m=text.match(/^---\n([\s\S]*?)\n---\n?/);
+  if(m){body=text.slice(m[0].length);m[1].split("\n").forEach(l=>{const i=l.indexOf(":");if(i>0)meta[l.slice(0,i).trim()]=l.slice(i+1).trim()})}
+  const secs={};
+  body.split(/^## /m).forEach(s=>{const nl=s.indexOf("\n");if(nl<0)return;secs[s.slice(0,nl).trim().toLowerCase()]=s.slice(nl+1).trim()});
+  const parts=(path||"").split("/").filter(Boolean);
+  let modelo=meta.modelo,cat=meta.categoria;
+  if(!modelo&&parts.length>=3)modelo=MODELOS.find(x=>x.toLowerCase()===parts[parts.length-3].toLowerCase());
+  if(!cat&&parts.length>=2)cat=parts[parts.length-2];
+  if(!MODELOS.includes(modelo))modelo="Universal";
+  if(!CATS.some(c=>c[0]===cat))cat="otros";
+  const placeholder=/^Pega aquí un resultado|^- Cuándo funciona mejor/;
+  const tags=(meta.etiquetas||"").replace(/^\[|\]$/g,"").split(",").map(s=>s.trim()).filter(Boolean);
+  const prompt=secs["prompt"]||body.trim();
+  if(!prompt)return null;
+  const fname=(parts[parts.length-1]||"").replace(/\.md$/i,"");
+  return{id:uid(),titulo:meta.titulo||fname||"Sin título",modelo,categoria:cat,etiquetas:tags,
+    fecha:meta.fecha||TODAY,valoracion:Math.min(5,Math.max(1,parseInt(meta.valoracion)||3)),version:parseInt(meta.version)||1,
+    prompt,ejemplo:placeholder.test(secs["ejemplo de resultado"]||"")?"":(secs["ejemplo de resultado"]||""),
+    notas:placeholder.test(secs["notas"]||"")?"":(secs["notas"]||"")};
+}
+
+/* ---------- descargas ---------- */
+function download(name,blob){
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;
+  document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+}
+const crcT=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0}return t})();
+function crc32(b){let c=0xFFFFFFFF;for(let i=0;i<b.length;i++)c=crcT[(c^b[i])&255]^(c>>>8);return(c^0xFFFFFFFF)>>>0}
+function makeZip(files){
+  const enc=new TextEncoder();const chunks=[];const central=[];let off=0;
+  const u16=n=>[n&255,(n>>8)&255],u32=n=>[n&255,(n>>8)&255,(n>>16)&255,(n>>>24)&255];
+  const d=new Date();
+  const time=(d.getHours()<<11)|(d.getMinutes()<<5)|(d.getSeconds()>>1);
+  const date=((d.getFullYear()-1980)<<9)|((d.getMonth()+1)<<5)|d.getDate();
+  files.forEach(f=>{
+    const name=enc.encode(f.name),content=enc.encode(f.content),crc=crc32(content);
+    const lh=new Uint8Array([0x50,0x4b,3,4,20,0,0,8,0,0,...u16(time),...u16(date),...u32(crc),...u32(content.length),...u32(content.length),...u16(name.length),0,0]);
+    chunks.push(lh,name,content);
+    central.push({name,crc,size:content.length,off});
+    off+=lh.length+name.length+content.length;
+  });
+  const cdStart=off;
+  central.forEach(c=>{
+    const h=new Uint8Array([0x50,0x4b,1,2,20,0,20,0,0,8,0,0,...u16(time),...u16(date),...u32(c.crc),...u32(c.size),...u32(c.size),...u16(c.name.length),0,0,0,0,0,0,0,0,0,0,0,0,...u32(c.off)]);
+    chunks.push(h,c.name);off+=h.length+c.name.length;
+  });
+  const end=new Uint8Array([0x50,0x4b,5,6,0,0,0,0,...u16(central.length),...u16(central.length),...u32(off-cdStart),...u32(cdStart),0,0]);
+  chunks.push(end);
+  return new Blob(chunks,{type:"application/zip"});
+}
+
+/* ---------- interfaz ---------- */
+const $=id=>document.getElementById(id);
+let fModel="",fCat="";
+function toast(t){const el=$("toast");el.textContent=t;el.classList.add("show");clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove("show"),2200)}
+function hl(text){return esc(text).replace(/\[([^\]\n]{1,40})\]/g,'<span class="v">[$1]</span>')}
+
+function buildFilters(){
+  const m=$("fModel"),c=$("fCat");
+  const chip=(label,k,isModel)=>{
+    const b=document.createElement("button");b.type="button";b.className="chip";b.textContent=label;b.dataset.k=k;b.setAttribute("aria-pressed","false");
+    b.onclick=()=>{if(isModel)fModel=fModel===k?"":k;else fCat=fCat===k?"":k;render()};
+    return b};
+  GRUPOS.forEach(g=>{
+    const row=document.createElement("div");row.className="chips";
+    const l=document.createElement("span");l.className="label";l.textContent=g[0];row.appendChild(l);
+    g[1].forEach(x=>row.appendChild(chip(x,x,true)));
+    m.appendChild(row);
+  });
+  CATS.forEach(x=>c.appendChild(chip(x[1],x[0],false)));
+  $("eModelo").innerHTML=GRUPOS.map(g=>`<optgroup label="${g[0]}">${g[1].map(x=>`<option>${x}</option>`).join("")}</optgroup>`).join("");
+  $("eCat").innerHTML=CATS.map(x=>`<option value="${x[0]}">${x[1]}</option>`).join("");
+}
+function render(){
+  const avail=new Set(data.filter(p=>!fModel||p.modelo===fModel).map(p=>p.categoria));
+  if(fCat&&!avail.has(fCat))fCat="";
+  document.querySelectorAll("#fCat .chip").forEach(b=>{b.style.display=avail.has(b.dataset.k)?"":"none"});
+  document.querySelectorAll("#fModel .chip").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.k===fModel)));
+  document.querySelectorAll("#fCat .chip").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.k===fCat)));
+  const q=$("q").value.trim().toLowerCase();
+  let list=data.filter(p=>(!fModel||p.modelo===fModel)&&(!fCat||p.categoria===fCat)&&
+    (!q||(p.titulo+" "+p.prompt+" "+p.etiquetas.join(" ")+" "+p.notas).toLowerCase().includes(q)));
+  const s=$("sort").value;
+  list.sort((a,b)=>s==="val"?b.valoracion-a.valoracion||a.titulo.localeCompare(b.titulo):s==="fecha"?b.fecha.localeCompare(a.fecha):a.titulo.localeCompare(b.titulo));
+  $("count").textContent=list.length+" de "+data.length+" prompts";
+  const g=$("grid");
+  if(!list.length){g.innerHTML='<div class="empty" style="grid-column:1/-1">No hay prompts con estos filtros.</div>';return}
+  g.innerHTML=list.map(p=>`
+  <article class="card" data-id="${p.id}">
+    <div class="meta"><span class="badge model">${esc(p.modelo)}</span><span class="badge">${esc(catName(p.categoria))}</span>${p.etiquetas.map(t=>`<span class="badge">#${esc(t)}</span>`).join("")}</div>
+    <h3>${esc(p.titulo)}</h3>
+    <div class="prompt">${hl(p.prompt)}</div>
+    <div class="row">
+      <span class="stars" aria-label="Valoración ${p.valoracion} de 5">${[1,2,3,4,5].map(n=>`<button type="button" class="${n<=p.valoracion?"on":""}" data-act="rate" data-n="${n}" aria-label="${n} estrellas">★</button>`).join("")}</span>
+      <span class="spacer"></span>
+      <button class="small primary" data-act="use">Usar</button>
+      <button class="small" data-act="copy">Copiar</button>
+      <button class="small" data-act="view">Ver</button>
+      <button class="small" data-act="edit">Editar</button>
+      <button class="small" data-act="dl">.md</button>
+      <button class="small danger" data-act="del" aria-label="Borrar">✕</button>
+    </div>
+  </article>`).join("");
+}
+async function copyText(t){
+  try{await navigator.clipboard.writeText(t);toast("Copiado")}
+  catch(e){const ta=document.createElement("textarea");ta.value=t;document.body.appendChild(ta);ta.select();try{document.execCommand("copy");toast("Copiado")}catch(_){toast("No se pudo copiar")}ta.remove()}
+}
+const byId=id=>data.find(p=>p.id===id);
+
+$("grid").addEventListener("click",e=>{
+  const b=e.target.closest("button[data-act]");if(!b)return;
+  const p=byId(b.closest(".card").dataset.id);if(!p)return;
+  const a=b.dataset.act;
+  if(a==="rate"){p.valoracion=+b.dataset.n;save();render()}
+  else if(a==="copy")copyText(p.prompt);
+  else if(a==="use")openUse(p);
+  else if(a==="view")openView(p);
+  else if(a==="edit")openEdit(p);
+  else if(a==="dl")download(fileName(p),new Blob([toMd(p)],{type:"text/markdown"}));
+  else if(a==="del"){if(confirm("¿Borrar «"+p.titulo+"» de la biblioteca?\nEl archivo de tu Drive no se toca.")){data=data.filter(x=>x!==p);save();render()}}
+});
+$("q").addEventListener("input",render);$("sort").addEventListener("change",render);
+
+/* usar con variables */
+let useP=null,useVals={};
+function openUse(p){
+  useP=p;useVals={};
+  const vars=[...new Set([...p.prompt.matchAll(/\[([^\]\n]{1,40})\]/g)].map(m=>m[1]))];
+  $("uTitle").textContent=p.titulo;
+  $("uFields").innerHTML=vars.length?vars.map((v,i)=>`<label>${esc(v)}<input data-v="${esc(v)}" placeholder="${esc(v)}"></label>`).join(""):'<p class="hint">Este prompt no tiene partes variables.</p>';
+  updUse();$("dlgUse").showModal();
+}
+function updUse(){
+  let t=useP.prompt;
+  Object.keys(useVals).forEach(k=>{if(useVals[k])t=t.split("["+k+"]").join(useVals[k])});
+  $("uPrev").textContent=t;return t;
+}
+$("uFields").addEventListener("input",e=>{const i=e.target.closest("input[data-v]");if(i){useVals[i.dataset.v]=i.value;updUse()}});
+$("uCopy").onclick=()=>copyText(updUse());
+$("uClose").onclick=()=>$("dlgUse").close();
+
+/* ver */
+function openView(p){
+  $("vTitle").textContent=p.titulo;
+  $("vMeta").innerHTML=`<span class="badge model">${esc(p.modelo)}</span><span class="badge">${esc(catName(p.categoria))}</span><span class="badge">v${p.version}</span><span class="badge">${"★".repeat(p.valoracion)}</span><span class="badge">${esc(p.fecha)}</span>`;
+  $("vPrompt").innerHTML=hl(p.prompt);
+  $("vEj").textContent=p.ejemplo;$("vEjBox").style.display=p.ejemplo?"":"none";
+  $("vNo").textContent=p.notas;$("vNoBox").style.display=p.notas?"":"none";
+  $("dlgView").showModal();
+}
+$("vClose").onclick=()=>$("dlgView").close();
+
+/* añadir y editar */
+let editing=null;
+function openEdit(p){
+  editing=p||null;
+  $("editTitle").textContent=p?"Editar prompt":"Añadir prompt";
+  $("eTitulo").value=p?p.titulo:"";
+  $("eModelo").value=p?p.modelo:(fModel||"Universal");
+  $("eCat").value=p?p.categoria:(fCat||"otros");
+  $("eTags").value=p?p.etiquetas.join(", "):"";
+  $("eVal").value=p?p.valoracion:3;
+  $("ePrompt").value=p?p.prompt:"";
+  $("eEj").value=p?p.ejemplo:"";
+  $("eNotas").value=p?p.notas:"";
+  $("dlgEdit").showModal();$("eTitulo").focus();
+}
+$("btnNew").onclick=()=>openEdit(null);
+$("eCancel").onclick=()=>$("dlgEdit").close();
+$("formEdit").addEventListener("submit",e=>{
+  e.preventDefault();
+  const v={titulo:$("eTitulo").value.trim(),modelo:$("eModelo").value,categoria:$("eCat").value,
+    etiquetas:$("eTags").value.split(",").map(s=>s.trim().replace(/^#/,"")).filter(Boolean),
+    valoracion:+$("eVal").value,prompt:$("ePrompt").value.trim(),ejemplo:$("eEj").value.trim(),notas:$("eNotas").value.trim()};
+  if(!v.titulo||!v.prompt)return;
+  let p;
+  if(editing){
+    if(editing.prompt!==v.prompt)editing.version=(editing.version||1)+1;
+    Object.assign(editing,v,{fecha:TODAY});p=editing;
+  }else{
+    p=Object.assign({id:uid(),fecha:TODAY,version:1},v);data.push(p);
+  }
+  save();render();$("dlgEdit").close();
+  download(p.modelo+"-"+fileName(p),new Blob([toMd(p)],{type:"text/markdown"}));
+  toast("Guardado. Sube el .md a Drive: "+p.modelo+" / "+p.categoria);
+});
+
+/* importar */
+async function importFiles(files){
+  let n=0;
+  for(const f of files){
+    if(!/\.md$/i.test(f.name))continue;
+    const p=parseMd(await f.text(),f.webkitRelativePath||f.name);if(!p)continue;
+    const i=data.findIndex(x=>x.titulo===p.titulo&&x.modelo===p.modelo&&x.categoria===p.categoria);
+    if(i>=0){p.id=data[i].id;data[i]=p}else data.push(p);
+    n++;
+  }
+  save();render();toast(n?n+" prompts importados":"No se encontraron archivos .md");
+}
+$("fileIn").onchange=e=>{importFiles([...e.target.files]);e.target.value=""};
+$("dirIn").onchange=e=>{importFiles([...e.target.files]);e.target.value=""};
+
+/* exportar */
+$("btnZip").onclick=()=>{
+  const files=data.map(p=>({name:"Biblioteca de Prompt/"+p.modelo+"/"+p.categoria+"/"+fileName(p),content:toMd(p)}));
+  download("Biblioteca de Prompt.zip",makeZip(files));
+  toast("ZIP descargado con la misma estructura que Drive");
+};
+
+load();buildFilters();render();
+</script>
+</body>
+</html>
