@@ -1,4 +1,4 @@
-# Biblioteca de Prompt
+# Biblioteca de Prompts para IA´s
 
 Biblioteca personal de prompts organizada por modelo de IA y categoría.
 
